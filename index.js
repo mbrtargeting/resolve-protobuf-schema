@@ -8,20 +8,48 @@ var merge = function(a, b) {
   return a
 }
 
-var readSync = function(filename) {
+var readSync = function(filename, protoPaths) {
+  protoPaths = protoPaths || []
+  protoPaths = protoPaths.concat(path.dirname(filename))
   if (!/\.proto$/i.test(filename) && !fs.existsSync(filename)) filename += '.proto'
 
   var sch = schema(fs.readFileSync(filename, 'utf-8'))
   var imports = [].concat(sch.imports || [])
 
   imports.forEach(function(i) {
-    sch = merge(sch, readSync(path.resolve(path.dirname(filename), i)))
+    var resolved = null
+    protoPaths.every(function(protoPath) {
+      resolved = path.resolve(protoPath, i)
+      return !fs.existsSync(resolved)
+    })
+    sch = merge(sch, readSync(resolved, protoPaths))
   })
 
   return sch
 }
 
-var read = function(filename, cb) {
+function resolveImport(importFile, protoPaths, cb) {
+  var paths = [].concat(protoPaths || [])
+  var resolvedFile = null
+
+  var resolveLoop = function(resolved) {
+    if (resolved) return cb(resolvedFile)
+    if (!paths.length) return cb(null)
+
+    resolvedFile = path.resolve(paths.shift(), importFile)
+    fs.exists(resolvedFile, resolveLoop)
+  }
+  resolveLoop()
+}
+
+var read = function(filename /*, protoPaths, cb */) {
+  var args = [].slice.call(arguments)
+  var protoPaths = args.slice(1, -1)[0]
+  var cb = args.slice(-1)[0]
+
+  protoPaths = protoPaths || []
+  protoPaths = protoPaths.concat([path.dirname(filename)])
+
   fs.exists(filename, function(exists) {
     if (!exists && !/\.proto$/i.test(filename)) filename += '.proto'
 
@@ -34,10 +62,12 @@ var read = function(filename, cb) {
       var loop = function() {
         if (!imports.length) return cb(null, sch)
 
-        read(path.resolve(path.dirname(filename), imports.shift()), function(err, ch) {
-          if (err) return cb(err)
-          sch = merge(sch, ch)
-          loop()
+        resolveImport(imports.shift(), protoPaths, function(resolvedFile) {
+          read(resolvedFile, protoPaths, function(err, ch) {
+            if (err) return cb(err)
+            sch = merge(sch, ch)
+            loop()
+          })
         })
       }
 

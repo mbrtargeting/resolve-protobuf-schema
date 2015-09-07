@@ -1,0 +1,5 @@
+import "e.proto";
+
+message D {
+  optional string d = 1;
+}
