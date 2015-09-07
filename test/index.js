@@ -6,8 +6,12 @@ var test = function(name, fn) {
     fn(t, schema)
   })
   tape(name+' sync', function(t) {
-    fn(t, function(name, cb) {
-      cb(null, schema.sync(name))
+    fn(t, function(name /*, protoPaths, cb */) {
+      var args = [].slice.call(arguments)
+      var protoPaths = args.slice(1, -1)[0]
+      var cb = args.slice(-1)[0]
+
+      cb(null, schema.sync(name, protoPaths))
     })
   })
 }
@@ -53,6 +57,19 @@ test('G references f.F', function(t, schema) {
     t.notOk(err, 'no err')
     t.same(sch, require('./g.json'))
     schema(__dirname+'/g', function(err, sch) {
+      t.notOk(err, 'no err')
+      t.same(sch.messages.length, 3)
+      t.end()
+    })
+  })
+})
+
+test('d imports e imports f from external proto paths', function(t, schema) {
+  var protoPaths = [__dirname+'/include_e', __dirname+'/include_f']
+  schema(__dirname+'/d.proto', protoPaths, function(err, sch) {
+    t.notOk(err, 'no err')
+    t.same(sch.messages.length, 3)
+    schema(__dirname+'/d', protoPaths, function(err, sch) {
       t.notOk(err, 'no err')
       t.same(sch.messages.length, 3)
       t.end()
