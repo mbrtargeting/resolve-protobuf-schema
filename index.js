@@ -18,8 +18,6 @@ var merge = function(a, b) {
 
     a.messages = a.messages.concat(b.messages.map(qualify))
     a.enums = a.enums.concat(b.enums.map(qualify))
-
-    return a
   } else {
     a.messages = a.messages.concat(b.messages)
     a.enums = a.enums.concat(b.enums)
