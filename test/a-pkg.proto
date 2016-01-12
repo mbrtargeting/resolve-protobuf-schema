@@ -1,0 +1,7 @@
+package com.example.a;
+
+import "./b-pkg.proto";
+
+message A {
+  optional string a = 1;
+}

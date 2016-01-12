@@ -47,3 +47,16 @@ test('a imports b imports c', function(t, schema) {
     })
   })
 })
+
+test('a-pkg imports b-pkg with fully qualified references', function(t, schema) {
+  schema(__dirname+'/a-pkg.proto', function(err, sch) {
+    t.notOk(err, 'no err')
+    t.same(sch.messages.length, 2)
+    t.ok(sch.messages.filter(function(m) {return m.name === 'com.example.b.B'}).length)
+    schema(__dirname+'/a-pkg', function(err, sch) {
+      t.notOk(err, 'no err')
+      t.same(sch.messages.length, 2)
+      t.end()
+    })
+  })
+})

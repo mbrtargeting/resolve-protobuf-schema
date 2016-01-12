@@ -2,9 +2,29 @@ var schema = require('protocol-buffers-schema')
 var fs = require('fs')
 var path = require('path')
 
+var makeQualifiedName = function (pkgName) {
+  return function(_m) {
+    var m = JSON.parse(JSON.stringify(_m))
+
+    m.name = [pkgName, m.name].join('.')
+
+    return m
+  }
+}
+
 var merge = function(a, b) {
-  a.messages = a.messages.concat(b.messages)
-  a.enums = a.enums.concat(b.enums)
+  if (b.package) {
+    var qualify = makeQualifiedName(b.package)
+
+    a.messages = a.messages.concat(b.messages.map(qualify))
+    a.enums = a.enums.concat(b.enums.map(qualify))
+
+    return a
+  } else {
+    a.messages = a.messages.concat(b.messages)
+    a.enums = a.enums.concat(b.enums)
+  }
+
   return a
 }
 
