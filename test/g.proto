@@ -1,0 +1,26 @@
+package g;
+
+import "f.proto";
+
+message G {
+  optional f.F f = 1;
+}
+
+message H {
+  extensions 1 to 10;
+  message I {
+    message J {
+      extensions 1 to 10;
+      message I {
+      }
+    }
+  }
+}
+
+extend f.F {
+  optional G g = 2;
+}
+
+extend H.I.J {
+  optional G bar = 2;
+}

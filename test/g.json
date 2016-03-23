@@ -1,0 +1,164 @@
+{
+  "syntax": 3,
+  "enums": [],
+  "messages": [
+    {
+      "name": "g.G",
+      "enums": [],
+      "extends": [],
+      "messages": [],
+      "fields": [
+        {
+          "name": "f",
+          "type": "f.F",
+          "tag": 1,
+          "map": null,
+          "oneof": null,
+          "required": false,
+          "repeated": false,
+          "options": {}
+        }
+      ],
+      "extensions": null,
+      "fullName": "g.G"
+    },
+    {
+      "name": "g.H",
+      "enums": [],
+      "extends": [],
+      "messages": [
+        {
+          "name": "I",
+          "enums": [],
+          "extends": [],
+          "messages": [
+            {
+              "name": "J",
+              "enums": [],
+              "extends": [],
+              "messages": [
+                {
+                  "name": "I",
+                  "enums": [],
+                  "extends": [],
+                  "messages": [],
+                  "fields": [],
+                  "extensions": null,
+                  "fullName": "g.H.I.J.I"
+                }
+              ],
+              "fields": [
+                {
+                  "name": "bar",
+                  "type": "g.G",
+                  "tag": 2,
+                  "map": null,
+                  "oneof": null,
+                  "required": false,
+                  "repeated": false,
+                  "options": {}
+                }
+              ],
+              "extensions": {
+                "from": 1,
+                "to": 10
+              },
+              "fullName": "g.H.I.J"
+            }
+          ],
+          "fields": [],
+          "extensions": null,
+          "fullName": "g.H.I"
+        }
+      ],
+      "fields": [],
+      "extensions": {
+        "from": 1,
+        "to": 10
+      },
+      "fullName": "g.H"
+    },
+    {
+      "name": "f.F",
+      "enums": [],
+      "extends": [],
+      "messages": [],
+      "fields": [
+        {
+          "name": "f",
+          "type": "int32",
+          "tag": 1,
+          "map": null,
+          "oneof": null,
+          "required": false,
+          "repeated": false,
+          "options": {}
+        },
+        {
+          "name": "g",
+          "type": "g.G",
+          "tag": 2,
+          "map": null,
+          "oneof": null,
+          "required": false,
+          "repeated": false,
+          "options": {}
+        }
+      ],
+      "extensions": {
+        "from": 2,
+        "to": 10
+      },
+      "fullName": "f.F"
+    }
+  ],
+  "options": {},
+  "extends": [
+    {
+      "name": "f.F",
+      "message": {
+        "name": "f.F",
+        "enums": [],
+        "extends": [],
+        "messages": [],
+        "fields": [
+          {
+            "name": "g",
+            "type": "g.G",
+            "tag": 2,
+            "map": null,
+            "oneof": null,
+            "required": false,
+            "repeated": false,
+            "options": {}
+          }
+        ],
+        "extensions": null,
+        "fullName": "g"
+      }
+    },
+    {
+      "name": "H.I.J",
+      "message": {
+        "name": "H.I.J",
+        "enums": [],
+        "extends": [],
+        "messages": [],
+        "fields": [
+          {
+            "name": "bar",
+            "type": "g.G",
+            "tag": 2,
+            "map": null,
+            "oneof": null,
+            "required": false,
+            "repeated": false,
+            "options": {}
+          }
+        ],
+        "extensions": null,
+        "fullName": "g"
+      }
+    }
+  ]
+}

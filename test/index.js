@@ -47,3 +47,15 @@ test('a imports b imports c', function(t, schema) {
     })
   })
 })
+
+test('G references f.F', function(t, schema) {
+  schema(__dirname+'/g.proto', function(err, sch) {
+    t.notOk(err, 'no err')
+    t.same(sch, require('./g.json'))
+    schema(__dirname+'/g', function(err, sch) {
+      t.notOk(err, 'no err')
+      t.same(sch.messages.length, 3)
+      t.end()
+    })
+  })
+})
