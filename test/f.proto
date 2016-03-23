@@ -1,0 +1,6 @@
+package f;
+
+message F {
+  optional int32 f = 1;
+  extensions 2 to 10;
+}
