@@ -1,11 +1,31 @@
 var schema = require('protocol-buffers-schema')
 var fs = require('fs')
 var path = require('path')
+var _ = require('lodash')
 
 var merge = function(a, b) {
-  a.messages = a.messages.concat(b.messages)
-  a.enums = a.enums.concat(b.enums)
-  return a
+  var aUnique = _.differenceBy(a.messages, b.messages, 'fullName')
+  var bUnique = _.differenceBy(b.messages, a.messages, 'fullName')
+
+  var aNeedMerge = _.intersectionBy(a.messages, b.messages, 'fullName')
+  var bNeedMerge = _.intersectionBy(b.messages, a.messages, 'fullName')
+
+  var aBMerged = _(aNeedMerge)
+  .concat(bNeedMerge)
+  .groupBy('fullName')
+  .map(function (messages) {
+    return _.reduce(messages, function(merged, message) {
+      return _.extend({}, merged, message, {
+        fields: _.unionBy(merged.fields, message.fields, 'name'),
+      })
+    }, {})
+  })
+  .value()
+
+  return _.extend({}, a, {
+    messages: aUnique.concat(bUnique).concat(aBMerged),
+    enums: a.enums.concat(b.enums),
+  })
 }
 
 function mergeSchemas(schemas) {

@@ -1,5 +1,6 @@
 var tape = require('tape')
 var schema = require('../')
+var _ = require('lodash');
 
 var test = function(name, fn) {
   tape(name, function(t) {
@@ -72,6 +73,66 @@ test('d imports e imports f from external proto paths', function(t, schema) {
     schema(__dirname+'/d', protoPaths, function(err, sch) {
       t.notOk(err, 'no err')
       t.same(sch.messages.length, 3)
+      t.end()
+    })
+  })
+})
+
+test('h', function(t, schema) {
+  schema(__dirname+'/h.proto', function(err, sch) {
+    t.notOk(err, 'no err')
+    t.same(sch.messages.length, 1)
+    schema(__dirname+'/h', function(err, sch) {
+      t.notOk(err, 'no err')
+      t.same(sch.messages.length, 1)
+      t.end()
+    })
+  })
+})
+
+test('i extends h', function(t, schema) {
+  schema(__dirname+'/i.proto', function(err, sch) {
+    t.notOk(err, 'no err')
+    t.same(sch.messages.length, 2)
+    schema(__dirname+'/i', function(err, sch) {
+      t.notOk(err, 'no err')
+      t.same(sch.messages.length, 2)
+      t.end()
+    })
+  })
+})
+
+test('j extends h', function(t, schema) {
+  schema(__dirname+'/j.proto', function(err, sch) {
+    t.notOk(err, 'no err')
+    t.same(sch.messages.length, 2)
+    schema(__dirname+'/j', function(err, sch) {
+      t.notOk(err, 'no err')
+      t.same(sch.messages.length, 2)
+      t.end()
+    })
+  })
+})
+
+test('k has field of type i and j', function(t, schema) {
+  function check(sch) {
+    var messageH = _.filter(sch.messages, function(message) {
+     return message.fullName === 'H'
+    })
+    t.same(messageH.length, 1)
+    var hMessages = _.map(messageH[0].fields, function(message) {
+      return message.name
+    })
+    t.ok(_.indexOf(hMessages, 'i') !== -1)
+    t.ok(_.indexOf(hMessages, 'j') !== -1)
+  }
+
+  schema(__dirname+'/k.proto', function(err, sch) {
+    t.notOk(err, 'no err')
+    check(sch)
+    schema(__dirname+'/k', function(err, sch) {
+      t.notOk(err, 'no err')
+      check(sch)
       t.end()
     })
   })
