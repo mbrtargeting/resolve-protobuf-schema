@@ -1,6 +1,5 @@
 var tape = require('tape')
 var schema = require('../')
-var _ = require('lodash');
 
 var test = function(name, fn) {
   tape(name, function(t) {
@@ -116,15 +115,15 @@ test('j extends h', function(t, schema) {
 
 test('k has field of type i and j', function(t, schema) {
   function check(sch) {
-    var messageH = _.filter(sch.messages, function(message) {
+    var messageH = sch.messages.filter(function(message) {
      return message.fullName === 'H'
     })
     t.same(messageH.length, 1)
-    var hMessages = _.map(messageH[0].fields, function(message) {
+    var hMessages = messageH[0].fields.map(function(message) {
       return message.name
     })
-    t.ok(_.indexOf(hMessages, 'i') !== -1)
-    t.ok(_.indexOf(hMessages, 'j') !== -1)
+    t.notSame(hMessages.indexOf('i'), -1)
+    t.notSame(hMessages.indexOf('j'), -1)
   }
 
   schema(__dirname+'/k.proto', function(err, sch) {

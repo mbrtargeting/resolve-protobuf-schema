@@ -4,7 +4,6 @@
   "description": "Read a protobuf schema from the disk, parse it and resolve all imports",
   "main": "index.js",
   "dependencies": {
-    "lodash": "^4.8.2",
     "protocol-buffers-schema": "^2.0.2"
   },
   "devDependencies": {

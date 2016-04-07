@@ -1,31 +1,38 @@
 var schema = require('protocol-buffers-schema')
 var fs = require('fs')
 var path = require('path')
-var _ = require('lodash')
+
+function mapBy(array, attribute, fn) {
+  var grouped = {}
+  array.map(function(item) {
+    var key = item[attribute]
+    grouped[key] = (grouped[key] || []).concat([item])
+  })
+  var results = []
+  Object.keys(grouped).forEach(function(key) {
+    results.push(fn(key, grouped[key], grouped))
+  })
+  return results
+}
 
 var merge = function(a, b) {
-  var aUnique = _.differenceBy(a.messages, b.messages, 'fullName')
-  var bUnique = _.differenceBy(b.messages, a.messages, 'fullName')
+  var messages = a.messages.concat(b.messages)
+  a.messages = mapBy(messages, 'fullName', function(fullName, messageGroup) {
+    var fields = []
+    messageGroup.map(function(message) {
+      fields = fields.concat(message.fields)
+    })
 
-  var aNeedMerge = _.intersectionBy(a.messages, b.messages, 'fullName')
-  var bNeedMerge = _.intersectionBy(b.messages, a.messages, 'fullName')
-
-  var aBMerged = _(aNeedMerge)
-  .concat(bNeedMerge)
-  .groupBy('fullName')
-  .map(function (messages) {
-    return _.reduce(messages, function(merged, message) {
-      return _.extend({}, merged, message, {
-        fields: _.unionBy(merged.fields, message.fields, 'name'),
-      })
-    }, {})
+    var merged = messageGroup[0]
+    merged.fields = mapBy(fields, 'name', function(name, fieldGroup) {
+      return fieldGroup[0]
+    })
+    return merged
   })
-  .value()
 
-  return _.extend({}, a, {
-    messages: aUnique.concat(bUnique).concat(aBMerged),
-    enums: a.enums.concat(b.enums),
-  })
+  a.enums = a.enums.concat(b.enums)
+
+  return a
 }
 
 function mergeSchemas(schemas) {
