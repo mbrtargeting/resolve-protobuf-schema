@@ -157,29 +157,29 @@ function extendMessage(ext, msg) {
 }
 
 function propagateExtends(schemas) {
-  schemas.reduceRight(function(messages, extSchema) {
-    var messages = collectIntoArray(extSchema, collectMessages).concat(messages)
+  schemas.reduce(function(messagesOrig, extSchema) {
+    var messages = collectIntoObject(extSchema, collectMessages, 'fullName')
+    messagesOrig.forEach(function(message) {
+      messages[message.fullName] = message
+    })
 
     collectExtends(extSchema, extSchema.package, function(ext, ns) {
       var refCandidates = getCandidates(ns, ext.name)
-      var matchingMessage
-      refCandidates.some(function(refCandidate) {
-        return messages.some(function(message) {
-          if (message.fullName === refCandidate) {
-            matchingMessage = message
-            return true
-          }
-          return false
-        })
+      var found = refCandidates.some(function(refCandidate) {
+        if (messages[refCandidate]) {
+          extendMessage(ext, messages[refCandidate])
+          return true
+        }
+        return false
       })
-      if (matchingMessage) {
-        extendMessage(ext, matchingMessage)
-      } else {
-        throw new Error(ext.name + ' extend references unknown message')
+      if (!found) {
+         throw new Error(ext.name + ' extend references unknown message')
       }
     })
 
-    return messages
+    return Object.keys(messages).map(function(message) {
+      return messages[message]
+    })
   }, [])
   return schemas
 }
