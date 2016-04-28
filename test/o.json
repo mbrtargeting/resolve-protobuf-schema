@@ -1,0 +1,135 @@
+{
+  "enums": [
+    {
+      "fullName": "EnumM",
+      "name": "EnumM",
+      "values": {
+        "MA": 1
+      }
+    },
+    {
+      "fullName": "EnumN",
+      "name": "EnumN",
+      "values": {
+        "NA": 1
+      }
+    },
+    {
+      "fullName": "EnumO",
+      "name": "EnumO",
+      "values": {
+        "OA": 1
+      }
+    }
+  ],
+  "messages": [
+    {
+      "enums": [],
+      "extends": [],
+      "extensions": {
+        "from": 2,
+        "to": 3
+      },
+      "fields": [
+        {
+          "map": null,
+          "name": "o",
+          "oneof": null,
+          "options": {},
+          "repeated": false,
+          "required": false,
+          "tag": 1,
+          "type": "string"
+        },
+        {
+          "map": null,
+          "name": "n",
+          "oneof": null,
+          "options": {},
+          "repeated": false,
+          "required": false,
+          "tag": 2,
+          "type": "string"
+        }
+      ],
+      "fullName": "M",
+      "messages": [],
+      "name": "M"
+    },
+    {
+      "enums": [],
+      "extends": [
+        {
+          "message": {
+            "enums": [],
+            "extends": [],
+            "extensions": null,
+            "fields": [
+              {
+                "map": null,
+                "name": "n",
+                "oneof": null,
+                "options": {},
+                "repeated": false,
+                "required": false,
+                "tag": 2,
+                "type": "string"
+              }
+            ],
+            "fullName": "N",
+            "messages": [],
+            "name": "M"
+          },
+          "name": "M"
+        }
+      ],
+      "extensions": null,
+      "fields": [],
+      "fullName": "N",
+      "messages": [],
+      "name": "N"
+    },
+    {
+      "enums": [],
+      "extends": [],
+      "extensions": null,
+      "fields": [
+        {
+          "map": null,
+          "name": "o",
+          "oneof": null,
+          "options": {},
+          "repeated": false,
+          "required": false,
+          "tag": 1,
+          "type": "string"
+        },
+        {
+          "map": null,
+          "name": "m",
+          "oneof": null,
+          "options": {},
+          "repeated": false,
+          "required": false,
+          "tag": 2,
+          "type": "M"
+        },
+        {
+          "map": null,
+          "name": "n",
+          "oneof": null,
+          "options": {},
+          "repeated": false,
+          "required": false,
+          "tag": 3,
+          "type": "N"
+        }
+      ],
+      "fullName": "O",
+      "messages": [],
+      "name": "O"
+    }
+  ],
+  "options": {},
+  "syntax": 3
+}

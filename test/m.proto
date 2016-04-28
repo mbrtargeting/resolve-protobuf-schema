@@ -1,0 +1,9 @@
+enum EnumM {
+    MA = 1;
+}
+
+message M {
+    extensions 2 to 3;
+
+    optional string o = 1;
+}

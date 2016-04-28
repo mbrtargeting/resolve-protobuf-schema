@@ -1,0 +1,12 @@
+import "m.proto";
+import "n.proto";
+
+enum EnumO {
+    OA = 1;
+}
+
+message O {
+    optional string o = 1;
+    optional M m = 2;
+    optional N n = 3;
+}

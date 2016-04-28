@@ -38,6 +38,7 @@ function mergeSchemas(schemas) {
   delete sch.package
   delete sch.extends
   delete sch.imports
+  delete sch.importPaths
   return sch
 }
 
@@ -184,25 +185,49 @@ function propagateExtends(schemas) {
   return schemas
 }
 
-var readSync = function(filename, protoPaths) {
+var readSync = function(filename, protoPaths, schemas) {
   protoPaths = protoPaths || []
   protoPaths = protoPaths.concat(path.dirname(filename))
   if (!/\.proto$/i.test(filename) && !fs.existsSync(filename)) filename += '.proto'
 
-  var sch = schema(fs.readFileSync(filename, 'utf-8'))
-  var imports = [].concat(sch.imports || [])
-  var schemas = [sch]
+  if (schemas[filename]) {
+    return []
+  }
 
+  var sch = schema(fs.readFileSync(filename, 'utf-8'))
+  schemas[filename] = sch
+
+  var imports = [].concat(sch.imports || [])
+
+  sch.importPaths = []
   imports.forEach(function(i) {
     var resolved = null
     protoPaths.every(function(protoPath) {
       resolved = path.resolve(protoPath, i)
       return !fs.existsSync(resolved)
     })
-    schemas = schemas.concat(readSync(resolved, protoPaths))
+    if (sch.importPaths.indexOf(resolved) === -1) {
+      sch.importPaths.push(resolved)
+    }
+    readSync(resolved, protoPaths, schemas)
   })
+  return sortByImports(schemas)
+}
 
-  return schemas
+function sortByImports(obj) {
+  var sorted = []
+  function buildDependencyTree(parentFilename) {
+    if (sorted.indexOf(parentFilename) !== -1) {
+      return
+    }
+
+    obj[parentFilename].importPaths.forEach(buildDependencyTree)
+    sorted.push(parentFilename)
+  }
+  Object.keys(obj).forEach(buildDependencyTree)
+  return sorted.map(function (filename) {
+    return obj[filename]
+  })
 }
 
 function resolveImport(importFile, protoPaths, cb) {
@@ -219,27 +244,33 @@ function resolveImport(importFile, protoPaths, cb) {
   resolveLoop()
 }
 
-var read = function(filename, protoPaths, cb) {
+var read = function(filename, protoPaths, schemas, cb) {
   protoPaths = protoPaths || []
   protoPaths = protoPaths.concat([path.dirname(filename)])
 
   fs.exists(filename, function(exists) {
     if (!exists && !/\.proto$/i.test(filename)) filename += '.proto'
+    if (schemas[filename]) {
+      return cb(null, [])
+    }
 
     fs.readFile(filename, 'utf-8', function(err, proto) {
       if (err) return cb(err)
 
       var sch = schema(proto)
+      schemas[filename] = sch
       var imports = [].concat(sch.imports || [])
-      var schemas = [sch]
 
+      sch.importPaths = []
       var loop = function() {
-        if (!imports.length) return cb(null, schemas)
+        if (!imports.length) return cb(null, sortByImports(schemas))
 
         resolveImport(imports.shift(), protoPaths, function(resolvedFile) {
-          read(resolvedFile, protoPaths, function(err, ch) {
+          if (sch.importPaths.indexOf(resolvedFile) === -1) {
+            sch.importPaths.push(resolvedFile)
+          }
+          read(resolvedFile, protoPaths, schemas, function(err, ch) {
             if (err) return cb(err)
-            schemas = schemas.concat(ch)
             loop()
           })
         })
@@ -255,7 +286,7 @@ function readAndMerge(filename /*, protoPaths, cb */) {
   var protoPaths = args.slice(1, -1)[0]
   var cb = args.slice(-1)[0]
 
-  read(filename, protoPaths, function(err, schemas) {
+  read(filename, protoPaths, {}, function(err, schemas) {
     if (err) return cb(err)
     schemas.forEach(qualifyMessages)
     schemas.forEach(qualifyFieldTypes)
@@ -266,7 +297,7 @@ function readAndMerge(filename /*, protoPaths, cb */) {
 }
 
 function readAndMergeSync(filename, protoPaths) {
-  var schemas = readSync(filename, protoPaths)
+  var schemas = readSync(filename, protoPaths, {})
   schemas.forEach(qualifyMessages)
   schemas.forEach(qualifyFieldTypes)
   propagateExtends(schemas)
