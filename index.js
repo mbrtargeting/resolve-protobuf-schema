@@ -89,21 +89,26 @@ function collectIntoArray(schema, collector) {
   return values
 }
 
+function collectIntoObject(schema, collector, attribute, values) {
+  values = values || {}
+  collector(schema, schema.package, function(value) {
+    values[value[attribute]] = value
+  })
+  return values
+}
+
 function qualifyFieldTypes(schema) {
-  var messages = collectIntoArray(schema, collectMessages)
-  var enums = collectIntoArray(schema, collectEnums)
-  var types = messages.concat(enums)
+  var messages = collectIntoObject(schema, collectMessages, 'fullName')
+  var types = collectIntoObject(schema, collectEnums, 'fullName', messages)
   collectFields(schema, schema.package, function(field, ns) {
     var type = field.type
     var refCandidates = getCandidates(ns, type)
     refCandidates.some(function(refCandidate) {
-      return types.some(function(type) {
-        if (type.fullName === refCandidate) {
-          field.type = refCandidate
-          return true
-        }
-        return false
-      })
+      if (types[refCandidate]) {
+        field.type = refCandidate
+        return true
+      }
+      return false
     })
   })
 }
