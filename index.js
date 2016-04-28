@@ -36,6 +36,7 @@ var merge = function(a, b) {
 function mergeSchemas(schemas) {
   var sch = schemas.reduce(merge)
   delete sch.package
+  delete sch.extends
   delete sch.imports
   return sch
 }
