@@ -1,0 +1,11 @@
+import "m.proto";
+
+enum EnumN {
+    NA = 1;
+}
+
+message N {
+    extend M {
+        optional string n = 2;
+    }
+}

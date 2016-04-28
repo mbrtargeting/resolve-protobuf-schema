@@ -3,6 +3,39 @@
   "enums": [],
   "messages": [
     {
+      "name": "f.F",
+      "enums": [],
+      "extends": [],
+      "messages": [],
+      "fields": [
+        {
+          "name": "f",
+          "type": "int32",
+          "tag": 1,
+          "map": null,
+          "oneof": null,
+          "required": false,
+          "repeated": false,
+          "options": {}
+        },
+        {
+          "name": "g",
+          "type": "g.G",
+          "tag": 2,
+          "map": null,
+          "oneof": null,
+          "required": false,
+          "repeated": false,
+          "options": {}
+        }
+      ],
+      "extensions": {
+        "from": 2,
+        "to": 10
+      },
+      "fullName": "f.F"
+    },
+    {
       "name": "g.G",
       "enums": [],
       "extends": [],
@@ -77,39 +110,6 @@
         "to": 10
       },
       "fullName": "g.H"
-    },
-    {
-      "name": "f.F",
-      "enums": [],
-      "extends": [],
-      "messages": [],
-      "fields": [
-        {
-          "name": "f",
-          "type": "int32",
-          "tag": 1,
-          "map": null,
-          "oneof": null,
-          "required": false,
-          "repeated": false,
-          "options": {}
-        },
-        {
-          "name": "g",
-          "type": "g.G",
-          "tag": 2,
-          "map": null,
-          "oneof": null,
-          "required": false,
-          "repeated": false,
-          "options": {}
-        }
-      ],
-      "extensions": {
-        "from": 2,
-        "to": 10
-      },
-      "fullName": "f.F"
     }
   ],
   "options": {}
