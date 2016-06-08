@@ -284,41 +284,78 @@ var read = function(filename, options, schemas, cb) {
   })
 }
 
-function normalizeOptions(filename, options) {
+function normalizeOptions(filenames, options) {
   if (options === null || options === undefined) {
     options = {}
   }
-  if (options === Object(options)) {
-    return {
-      protoRoot: options.protoRoot || path.dirname(filename),
-      protoPaths: options.protoPaths || [],
-    }
+
+  if (options !== Object(options)) {
+    throw new Error([
+      'Expected options to be null or an object, but got:',
+      JSON.stringify(options),
+    ].join(' '))
   }
-  throw new Error([
-    'Expected options to be null or an object, but got:',
-    JSON.stringify(options),
-  ].join(' '))
+
+  if (!options.protoRoot && Array.isArray(filenames)) {
+    throw new Error([
+      'Expected proto root in options if array of files is given:',
+      filenames,
+    ].join(' '))
+  }
+
+  var protoRoot = options.protoRoot
+  if (!protoRoot) {
+    // Fallback to backwards compatible behavior
+    protoRoot = path.dirname(filenames)
+  }
+
+  return {
+    protoRoot: protoRoot,
+    protoPaths: options.protoPaths || [],
+  }
 }
 
-function readAndMerge(filename /*, options, cb */) {
+function readAndMerge(filenames /*, options, cb */) {
   var args = [].slice.call(arguments)
   var options = args.slice(1, -1)[0]
-  options = normalizeOptions(filename, options)
+  options = normalizeOptions(filenames, options)
   var cb = args.slice(-1)[0]
 
-  read(filename, options, {}, function(err, schemas) {
-    if (err) return cb(err)
-    schemas.forEach(qualifyMessages)
-    schemas.forEach(qualifyFieldTypes)
-    propagateExtends(schemas)
-    var sch = mergeSchemas(schemas)
-    cb(null, sch)
-  })
+  if (!Array.isArray(filenames)) {
+    filenames = [filenames]
+  }
+
+  function collectSchemas(filenamesLeft, schemasCollected) {
+    var filename = filenamesLeft.shift()
+    read(filename, options, {}, function(err, schemas) {
+      if (err) return cb(err)
+
+      schemasCollected = schemasCollected.concat(schemas)
+      if (filenamesLeft.length !== 0) {
+        collectSchemas(filenamesLeft, schemasCollected)
+      } else {
+        schemasCollected.forEach(qualifyMessages)
+        schemasCollected.forEach(qualifyFieldTypes)
+        propagateExtends(schemasCollected)
+        var sch = mergeSchemas(schemasCollected)
+        cb(null, sch)
+      }
+    })
+  }
+  collectSchemas(filenames, [])
 }
 
-function readAndMergeSync(filename, options) {
-  options = normalizeOptions(filename, options)
-  var schemas = readSync(filename, options, {})
+function readAndMergeSync(filenames, options) {
+  options = normalizeOptions(filenames, options)
+
+  if (!Array.isArray(filenames)) {
+    filenames = [filenames]
+  }
+
+  var schemas = []
+  filenames.forEach(function(filename) {
+    schemas = schemas.concat(readSync(filename, options, {}))
+  })
   schemas.forEach(qualifyMessages)
   schemas.forEach(qualifyFieldTypes)
   propagateExtends(schemas)

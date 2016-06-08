@@ -127,10 +127,23 @@ test('k has field of type i and j', function(t, schema) {
     t.deepEqual(hMessages.sort(), ['h', 'i', 'j']);
   }
 
-  schema(__dirname+'/k.proto', function(err, sch) {
+  var filesProto = [
+    __dirname+'/i.proto',
+    __dirname+'/j.proto',
+    __dirname+'/k.proto',
+  ]
+  var options = {
+    protoRoot: __dirname,
+  }
+  schema(filesProto, options, function(err, sch) {
     t.notOk(err, 'no err')
     check(sch)
-    schema(__dirname+'/k', function(err, sch) {
+    files = [
+      __dirname+'/i',
+      __dirname+'/j',
+      __dirname+'/k',
+    ]
+    schema(files, options, function(err, sch) {
       t.notOk(err, 'no err')
       check(sch)
       t.end()
