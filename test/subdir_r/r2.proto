@@ -1,0 +1,3 @@
+message R2 {
+    optional string r2 = 1;
+}

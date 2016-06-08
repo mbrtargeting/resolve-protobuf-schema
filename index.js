@@ -185,9 +185,9 @@ function propagateExtends(schemas) {
   return schemas
 }
 
-var readSync = function(filename, protoPaths, schemas) {
-  protoPaths = protoPaths || []
-  protoPaths = protoPaths.concat(path.dirname(filename))
+var readSync = function(filename, options, schemas) {
+  var protoPaths = options.protoPaths.concat([options.protoRoot])
+
   if (!/\.proto$/i.test(filename) && !fs.existsSync(filename)) filename += '.proto'
 
   if (schemas[filename]) {
@@ -209,7 +209,7 @@ var readSync = function(filename, protoPaths, schemas) {
     if (sch.importPaths.indexOf(resolved) === -1) {
       sch.importPaths.push(resolved)
     }
-    readSync(resolved, protoPaths, schemas)
+    readSync(resolved, options, schemas)
   })
   return sortByImports(schemas)
 }
@@ -244,9 +244,12 @@ function resolveImport(importFile, protoPaths, cb) {
   resolveLoop()
 }
 
-var read = function(filename, protoPaths, schemas, cb) {
-  protoPaths = protoPaths || []
-  protoPaths = protoPaths.concat([path.dirname(filename)])
+var read = function(filename, options, schemas, cb) {
+  var protoPaths = options.protoPaths.concat([options.protoRoot])
+
+  if (!filename) {
+    return cb(null, [])
+  }
 
   fs.exists(filename, function(exists) {
     if (!exists && !/\.proto$/i.test(filename)) filename += '.proto'
@@ -269,7 +272,7 @@ var read = function(filename, protoPaths, schemas, cb) {
           if (sch.importPaths.indexOf(resolvedFile) === -1) {
             sch.importPaths.push(resolvedFile)
           }
-          read(resolvedFile, protoPaths, schemas, function(err, ch) {
+          read(resolvedFile, options, schemas, function(err, ch) {
             if (err) return cb(err)
             loop()
           })
@@ -281,12 +284,29 @@ var read = function(filename, protoPaths, schemas, cb) {
   })
 }
 
-function readAndMerge(filename /*, protoPaths, cb */) {
+function normalizeOptions(filename, options) {
+  if (options === null || options === undefined) {
+    options = {}
+  }
+  if (options === Object(options)) {
+    return {
+      protoRoot: options.protoRoot || path.dirname(filename),
+      protoPaths: options.protoPaths || [],
+    }
+  }
+  throw new Error([
+    'Expected options to be null or an object, but got:',
+    JSON.stringify(options),
+  ].join(' '))
+}
+
+function readAndMerge(filename /*, options, cb */) {
   var args = [].slice.call(arguments)
-  var protoPaths = args.slice(1, -1)[0]
+  var options = args.slice(1, -1)[0]
+  options = normalizeOptions(filename, options)
   var cb = args.slice(-1)[0]
 
-  read(filename, protoPaths, {}, function(err, schemas) {
+  read(filename, options, {}, function(err, schemas) {
     if (err) return cb(err)
     schemas.forEach(qualifyMessages)
     schemas.forEach(qualifyFieldTypes)
@@ -296,8 +316,9 @@ function readAndMerge(filename /*, protoPaths, cb */) {
   })
 }
 
-function readAndMergeSync(filename, protoPaths) {
-  var schemas = readSync(filename, protoPaths, {})
+function readAndMergeSync(filename, options) {
+  options = normalizeOptions(filename, options)
+  var schemas = readSync(filename, options, {})
   schemas.forEach(qualifyMessages)
   schemas.forEach(qualifyFieldTypes)
   propagateExtends(schemas)
