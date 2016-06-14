@@ -124,7 +124,7 @@ test('k has field of type i and j', function(t, schema) {
     var hMessages = messageH[0].fields.map(function(message) {
       return message.name
     })
-    t.deepEqual(hMessages.sort(), ['h', 'i', 'j']);
+    t.deepEqual(hMessages.sort(), ['h', 'i', 'j'])
   }
 
   var filesProto = [
