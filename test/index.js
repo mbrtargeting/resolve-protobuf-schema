@@ -6,12 +6,12 @@ var test = function(name, fn) {
     fn(t, schema)
   })
   tape(name+' sync', function(t) {
-    fn(t, function(name /*, protoPaths, cb */) {
+    fn(t, function(name /*, options, cb */) {
       var args = [].slice.call(arguments)
-      var protoPaths = args.slice(1, -1)[0]
+      var options = args.slice(1, -1)[0]
       var cb = args.slice(-1)[0]
 
-      cb(null, schema.sync(name, protoPaths))
+      cb(null, schema.sync(name, options))
     })
   })
 }
@@ -65,11 +65,13 @@ test('G references f.F', function(t, schema) {
 })
 
 test('d imports e imports f from external proto paths', function(t, schema) {
-  var protoPaths = [__dirname+'/include_e', __dirname+'/include_f']
-  schema(__dirname+'/d.proto', protoPaths, function(err, sch) {
+  var options = {
+    protoPaths: [__dirname+'/include_e', __dirname+'/include_f'],
+  }
+  schema(__dirname+'/d.proto', options, function(err, sch) {
     t.notOk(err, 'no err')
     t.same(sch.messages.length, 3)
-    schema(__dirname+'/d', protoPaths, function(err, sch) {
+    schema(__dirname+'/d', options, function(err, sch) {
       t.notOk(err, 'no err')
       t.same(sch.messages.length, 3)
       t.end()
@@ -122,13 +124,26 @@ test('k has field of type i and j', function(t, schema) {
     var hMessages = messageH[0].fields.map(function(message) {
       return message.name
     })
-    t.deepEqual(hMessages.sort(), ['h', 'i', 'j']);
+    t.deepEqual(hMessages.sort(), ['h', 'i', 'j'])
   }
 
-  schema(__dirname+'/k.proto', function(err, sch) {
+  var filesProto = [
+    __dirname+'/i.proto',
+    __dirname+'/j.proto',
+    __dirname+'/k.proto',
+  ]
+  var options = {
+    protoRoot: __dirname,
+  }
+  schema(filesProto, options, function(err, sch) {
     t.notOk(err, 'no err')
     check(sch)
-    schema(__dirname+'/k', function(err, sch) {
+    files = [
+      __dirname+'/i',
+      __dirname+'/j',
+      __dirname+'/k',
+    ]
+    schema(files, options, function(err, sch) {
       t.notOk(err, 'no err')
       check(sch)
       t.end()
@@ -142,6 +157,44 @@ test('enums are not duplicated', function(t, schema) {
     t.same(sch, require('./o.json'))
     schema(__dirname+'/o', function(err, sch) {
       t.notOk(err, 'no err')
+      t.end()
+    })
+  })
+})
+
+test('includes are resolved relative to proto file', function(t, schema) {
+  function check(sch) {
+    var fullNames = sch.messages.map(function(message) {
+     return message.fullName
+    })
+    t.deepEqual(fullNames.sort(), ['P', 'Q', 'R1', 'R2'])
+  }
+
+  schema(__dirname+'/p.proto', function(err, sch) {
+    t.notOk(err, 'no err')
+    check(sch)
+    schema(__dirname+'/p', function(err, sch) {
+      t.notOk(err, 'no err')
+      check(sch)
+      t.end()
+    })
+  })
+})
+
+test('includes are resolved relative to proto root', function(t, schema) {
+  function check(sch) {
+    var fullNames = sch.messages.map(function(message) {
+     return message.fullName
+    })
+    t.deepEqual(fullNames.sort(), ['R1', 'R2'])
+  }
+
+  schema(__dirname+'/subdir_r/r1.proto', {protoRoot: __dirname}, function(err, sch) {
+    t.notOk(err, 'no err')
+    check(sch)
+    schema(__dirname+'/subdir_r/r1', {protoRoot: __dirname}, function(err, sch) {
+      t.notOk(err, 'no err')
+      check(sch)
       t.end()
     })
   })

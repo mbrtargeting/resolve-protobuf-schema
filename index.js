@@ -185,9 +185,9 @@ function propagateExtends(schemas) {
   return schemas
 }
 
-var readSync = function(filename, protoPaths, schemas) {
-  protoPaths = protoPaths || []
-  protoPaths = protoPaths.concat(path.dirname(filename))
+var readSync = function(filename, options, schemas) {
+  var protoPaths = options.protoPaths.concat([options.protoRoot])
+
   if (!/\.proto$/i.test(filename) && !fs.existsSync(filename)) filename += '.proto'
 
   if (schemas[filename]) {
@@ -209,7 +209,7 @@ var readSync = function(filename, protoPaths, schemas) {
     if (sch.importPaths.indexOf(resolved) === -1) {
       sch.importPaths.push(resolved)
     }
-    readSync(resolved, protoPaths, schemas)
+    readSync(resolved, options, schemas)
   })
   return sortByImports(schemas)
 }
@@ -244,9 +244,12 @@ function resolveImport(importFile, protoPaths, cb) {
   resolveLoop()
 }
 
-var read = function(filename, protoPaths, schemas, cb) {
-  protoPaths = protoPaths || []
-  protoPaths = protoPaths.concat([path.dirname(filename)])
+var read = function(filename, options, schemas, cb) {
+  var protoPaths = options.protoPaths.concat([options.protoRoot])
+
+  if (!filename) {
+    return cb(null, [])
+  }
 
   fs.exists(filename, function(exists) {
     if (!exists && !/\.proto$/i.test(filename)) filename += '.proto'
@@ -269,7 +272,7 @@ var read = function(filename, protoPaths, schemas, cb) {
           if (sch.importPaths.indexOf(resolvedFile) === -1) {
             sch.importPaths.push(resolvedFile)
           }
-          read(resolvedFile, protoPaths, schemas, function(err, ch) {
+          read(resolvedFile, options, schemas, function(err, ch) {
             if (err) return cb(err)
             loop()
           })
@@ -281,23 +284,78 @@ var read = function(filename, protoPaths, schemas, cb) {
   })
 }
 
-function readAndMerge(filename /*, protoPaths, cb */) {
-  var args = [].slice.call(arguments)
-  var protoPaths = args.slice(1, -1)[0]
-  var cb = args.slice(-1)[0]
+function normalizeOptions(filenames, options) {
+  if (options === null || options === undefined) {
+    options = {}
+  }
 
-  read(filename, protoPaths, {}, function(err, schemas) {
-    if (err) return cb(err)
-    schemas.forEach(qualifyMessages)
-    schemas.forEach(qualifyFieldTypes)
-    propagateExtends(schemas)
-    var sch = mergeSchemas(schemas)
-    cb(null, sch)
-  })
+  if (options !== Object(options)) {
+    throw new Error([
+      'Expected options to be null or an object, but got:',
+      JSON.stringify(options),
+    ].join(' '))
+  }
+
+  if (!options.protoRoot && Array.isArray(filenames)) {
+    throw new Error([
+      'Expected proto root in options if array of files is given:',
+      filenames,
+    ].join(' '))
+  }
+
+  var protoRoot = options.protoRoot
+  if (!protoRoot) {
+    // Fallback to backwards compatible behavior
+    protoRoot = path.dirname(filenames)
+  }
+
+  return {
+    protoRoot: protoRoot,
+    protoPaths: options.protoPaths || [],
+  }
 }
 
-function readAndMergeSync(filename, protoPaths) {
-  var schemas = readSync(filename, protoPaths, {})
+function readAndMerge(filenames /*, options, cb */) {
+  var args = [].slice.call(arguments)
+  var options = args.slice(1, -1)[0]
+  options = normalizeOptions(filenames, options)
+  var cb = args.slice(-1)[0]
+
+  if (!Array.isArray(filenames)) {
+    filenames = [filenames]
+  }
+
+  function collectSchemas(filenamesLeft, schemasCollected) {
+    var filename = filenamesLeft.shift()
+    read(filename, options, {}, function(err, schemas) {
+      if (err) return cb(err)
+
+      schemasCollected = schemasCollected.concat(schemas)
+      if (filenamesLeft.length !== 0) {
+        collectSchemas(filenamesLeft, schemasCollected)
+      } else {
+        schemasCollected.forEach(qualifyMessages)
+        schemasCollected.forEach(qualifyFieldTypes)
+        propagateExtends(schemasCollected)
+        var sch = mergeSchemas(schemasCollected)
+        cb(null, sch)
+      }
+    })
+  }
+  collectSchemas(filenames, [])
+}
+
+function readAndMergeSync(filenames, options) {
+  options = normalizeOptions(filenames, options)
+
+  if (!Array.isArray(filenames)) {
+    filenames = [filenames]
+  }
+
+  var schemas = []
+  filenames.forEach(function(filename) {
+    schemas = schemas.concat(readSync(filename, options, {}))
+  })
   schemas.forEach(qualifyMessages)
   schemas.forEach(qualifyFieldTypes)
   propagateExtends(schemas)

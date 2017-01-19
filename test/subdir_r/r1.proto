@@ -1,0 +1,6 @@
+import "subdir_r/r2.proto";
+
+message R1 {
+    optional string r1 = 1;
+    optional R2 r2 = 2;
+}
